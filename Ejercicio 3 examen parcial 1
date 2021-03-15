@@ -1,0 +1,83 @@
+#include "p16F628a.inc"    ;incluir librerias relacionadas con el dispositivo
+ __CONFIG _FOSC_INTOSCCLK & _WDTE_OFF & _PWRTE_OFF & _MCLRE_OFF & _BOREN_OFF & _LVP_OFF & _CPD_OFF & _CP_OFF    
+;configuración del dispositivotodo en OFF y la frecuencia de oscilador
+;es la del "reloj del oscilador interno" (INTOSCCLK)     
+RES_VECT  CODE    0x0000            ; processor reset vector
+    GOTO    START                   ; go to beginning of program
+; TODO ADD INTERRUPTS HERE IF USED             
+MAIN_PROG CODE                      ; let linker place main program
+ i EQU 0x30;
+ j EQU 0x31;
+ k EQU 0x32;
+ 
+ 
+START
+
+    MOVLW 0x07 ;Apagar comparadores
+    MOVWF CMCON
+    BCF STATUS, IRP ; COLOCA UN CERO EN EL BIT SELECTOR DE BANCOS
+    BCF STATUS, RP1 ;Cambiar al banco 1
+    BSF STATUS, RP0 
+    MOVLW b'00000001' ;Establecer puerto B como salida excepto el primero (de los 8 bits del puerto)
+    MOVWF TRISB
+    BCF STATUS, RP0 ;Regresar al banco 0
+    CLRF PORTB
+    CLRF PORTA
+ ;-----------------------------
+ ;Realice un programa en lenguaje ensamblador PIC que ejecute el encendido yapagado de un LED en el puerto RB0. 
+ ;La duración de los estados On y Off debe ser aproximadamente 1.5 segundos, cada uno 
+ ;mientras se mantenga presionado un PUSH BUTTON en el puerto RB1 yaproximadamente 250 msen caso contrario 
+   
+
+
+led:;boton suelto
+    ; Enciende el led ubicado en RB1 del puerto B
+    BSF PORTB,1 ;		SE prende en RB1		    PIN DEL LED
+    BTFSS PORTB,0 ;verifica si esta presionado
+    CALL tiempo ; pasan los 250.064 ms
+    BTFSC PORTB,0 ;verifica si no esta presionado
+    CALL boton  ; pasan 1.50 s (aprox)
+    BCF PORTB, 1;  apaga el led				    PIN DEL LED
+    BTFSS PORTB,0  ;verifica si esta presionado
+    CALL tiempo
+    BTFSC PORTB,0 ;verifica si no esta presionado
+    call boton
+    GOTO led ;regresar y repetir
+   
+   
+boton: ;1.5 al precionar boton
+    call tiempo
+    call tiempo
+    call tiempo
+    call tiempo
+    call tiempo
+    call tiempo
+    
+tiempo:
+    MOVLW d'151';500 i,j = 183.984
+    MOVWF i
+ 
+ iloop:
+    nop
+    nop
+    MOVLW d'66';250 i,j =183.984
+    MOVWF j
+    
+jloop:
+    nop
+    MOVLW d'5';5
+    MOVWF k
+    
+kloop:
+    nop
+    DECFSZ k,f
+    GOTO kloop
+    
+    DECFSZ j,f
+    GOTO jloop
+    
+    decfsz i,f ; decrese el valor de arriba y el resultado se guarda donde mismo  
+    goto iloop ; regresa a la etiqueta y acaba
+    return
+
+    END
